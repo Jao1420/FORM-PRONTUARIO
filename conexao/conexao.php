@@ -1,6 +1,6 @@
 <?php
 
-$path = __DIR__ . '/.env';
+$path = __DIR__ . '/../.env';
 if (file_exists($path)) {
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {

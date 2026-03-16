@@ -1,4 +1,4 @@
-<?php require_once 'conexao.php'; 
+<?php require_once 'conexao/conexao.php'; 
 // require_once 'dados.php';
 ?>
 
@@ -52,7 +52,7 @@
 </head>
 <body>
     <h1>Cadastro de prontuário</h1>
-    <form class="form" id="formProntuario" action="inserirPront.php" method="POST">
+    <form class="form" id="formProntuario" action="insert/inserirPront.php" method="POST">
         <label class="textos" for="nomeInput">Nome do colaborador:</label><br>
         <input class="inputs" type="text" id="nome" name="nome" required><br><br>
 
@@ -72,7 +72,7 @@
         const formData = new FormData(this);
 
         // Enviam PHP via AJAX (fetch)
-        fetch('inserirPront.php', {
+        fetch('insert/inserirPront.php', {
             method: 'POST',
             body: formData
         })
