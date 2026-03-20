@@ -12,7 +12,7 @@ if (empty($nome) || empty($prontuario) || empty($prontuarioLeitor)) {
 
 $stmt = $conn->prepare("INSERT INTO readerPront (nome, prontuario, readerProntcol) VALUES (?, ?, ?)");
 $stmt->bind_param("sss", $nome, $prontuario, $prontuarioLeitor);
-
+        
 if ($stmt->execute()) {
     echo "sucesso";
 } else {

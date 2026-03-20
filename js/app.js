@@ -8,22 +8,35 @@ const filterBtnDatas = document.getElementById('filterBtnDatas');
 const dataInicio = document.getElementById('dataInicio');
 const dataFim = document.getElementById('dataFim');
 const exportBtn = document.getElementById('exportBtn');
+const modal = document.getElementById('modalDetalhes');
+const modalInfo = document.getElementById('modalInfo');
+const closeModalButtons = document.querySelectorAll('.close-modal');
 
 // Variável para armazenar dados do usuário
 let usuarioAtual = null;
+let materiais = [];
 
-// Padrão dos materiais
-const MATERIAIS = [
-    { id: 'luva_borracha', nome: 'Luva de ponta de borracha' },
-    { id: 'luva_antiestatica', nome: 'Luva antiestática' },
-    { id: 'alcool_gel', nome: 'Álcool em gel' },
-    { id: 'alcool_isopropilico', nome: 'Álcool isopropílico' },
-    { id: 'fita_demarcacao', nome: 'Fita de demarcação' }
-];
+// Buscar materiais do banco de dados
+async function carregarMateriais() {
+    try {
+        const response = await fetch('api/listar-materiais.php');
+        const data = await response.json();
+
+        if (data.sucesso && data.materiais) {
+            materiais = data.materiais;
+            initMaterials();
+        } else {
+            showAlert('Erro ao carregar materiais.', 'error');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar materiais:', error);
+        showAlert('Erro de conexão ao carregar materiais.', 'error');
+    }
+}
 
 // Criar checkboxes de materiais dinâmicamente
 function initMaterials() {
-    MATERIAIS.forEach(material => {
+    materiais.forEach(material => {
         const materialItem = document.createElement('div');
         materialItem.classList.add('material-item');
         materialItem.innerHTML = `
@@ -165,23 +178,31 @@ async function carregarRegistros(dataInicioFiltro = null, dataFimFiltro = null) 
         if (data.registros && data.registros.length > 0) {
             data.registros.forEach(registro => {
                 const row = document.createElement('tr');
-                const dataHora = new Date(registro.data_hora).toLocaleString('pt-BR');
-                const quantidade = registro.quantidade || 1;
-                const nomeUsuario = registro.nome_usuario || 'N/A';
+                const ultimaRetirada = new Date(registro.ultima_retirada).toLocaleString('pt-BR');
+                const totalRetiradas = registro.total_retiradas;
                 const prontuario = registro.prontuario_leitor || 'N/A';
+                
+                // Indicar múltiplas retiradas
+                const aviso = totalRetiradas > 1 ? ' ⚠️ Múltiplas retiradas' : '';
 
                 row.innerHTML = `
-                    <td>${nomeUsuario}</td>
                     <td>${prontuario}</td>
-                    <td>${registro.material_nome || 'N/A'}</td>
-                    <td>${quantidade}</td>
-                    <td>${dataHora}</td>
+                    <td>${totalRetiradas}${aviso}</td>
+                    <td>${ultimaRetirada}</td>
+                    <td><button class="btn-details" data-prontuario="${prontuario}">Ver Detalhes</button></td>
                 `;
+                
+                // Adicionar evento para abrir modal
+                const btnDetails = row.querySelector('.btn-details');
+                btnDetails.addEventListener('click', () => {
+                    abrirModal(registro);
+                });
+                
                 tableBody.appendChild(row);
             });
         } else {
             const emptyRow = document.createElement('tr');
-            emptyRow.innerHTML = '<td colspan="5" class="empty-state">Nenhum registro encontrado.</td>';
+            emptyRow.innerHTML = '<td colspan="4" class="empty-state">Nenhum registro encontrado.</td>';
             tableBody.appendChild(emptyRow);
         }
     } catch (error) {
@@ -189,6 +210,60 @@ async function carregarRegistros(dataInicioFiltro = null, dataFimFiltro = null) 
         showAlert('Erro ao carregar registros.', 'error');
     }
 }
+
+// Abrir modal com detalhes
+function abrirModal(registro) {
+    const prontuario = registro.prontuario_leitor;
+    const totalRetiradas = registro.total_retiradas;
+    const materiais = registro.materiais || [];
+    
+    let avisoMultiplas = '';
+    if (totalRetiradas > 1) {
+        avisoMultiplas = `<div class="aviso-multiplas">⚠️ Este usuário realizou <strong>${totalRetiradas} retiradas</strong> no período</div>`;
+    }
+    
+    let tabelaMateriais = '<table class="modal-table"><thead><tr><th>Material</th><th>Qtd</th><th>Data/Hora</th></tr></thead><tbody>';
+    
+    materiais.forEach(material => {
+        const dataHora = new Date(material.data_hora).toLocaleString('pt-BR');
+        tabelaMateriais += `
+            <tr>
+                <td>${material.material_nome}</td>
+                <td>${material.quantidade}</td>
+                <td>${dataHora}</td>
+            </tr>
+        `;
+    });
+    
+    tabelaMateriais += '</tbody></table>';
+    
+    modalInfo.innerHTML = `
+        <div class="modal-detail-info">
+            <p><strong>Prontuário:</strong> ${prontuario}</p>
+            ${avisoMultiplas}
+            <h3>Materiais Retirados:</h3>
+            ${tabelaMateriais}
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+}
+
+// Fechar modal
+function fecharModal() {
+    modal.style.display = 'none';
+}
+
+// Event listeners do modal
+closeModalButtons.forEach(btn => {
+    btn.addEventListener('click', fecharModal);
+});
+
+window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+        fecharModal();
+    }
+});
 
 // Filtrar por data
 filterBtnDatas.addEventListener('click', () => {
@@ -218,6 +293,6 @@ exportBtn.addEventListener('click', () => {
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
-    initMaterials();
+    carregarMateriais();
     carregarRegistros();
 });

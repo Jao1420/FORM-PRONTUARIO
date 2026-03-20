@@ -11,7 +11,6 @@ if (!$input || !isset($input['prontuario_leitor'], $input['materiais'])) {
 }
 
 $prontuario_leitor = trim($input['prontuario_leitor']);
-$nome_usuario = isset($input['nome_usuario']) ? trim($input['nome_usuario']) : '';
 $materiais = $input['materiais'];
 
 if (empty($prontuario_leitor) || empty($materiais)) {
@@ -24,7 +23,6 @@ if (empty($prontuario_leitor) || empty($materiais)) {
 $sqlCreateTable = "CREATE TABLE IF NOT EXISTS saidas_materiais (
     id INT AUTO_INCREMENT PRIMARY KEY,
     prontuario_leitor VARCHAR(100) NOT NULL,
-    nome_usuario VARCHAR(255),
     material_id VARCHAR(50) NOT NULL,
     material_nome VARCHAR(255) NOT NULL,
     quantidade INT DEFAULT 1,
@@ -46,7 +44,7 @@ foreach ($materiais as $material) {
     $material_nome = trim($material['material_nome']);
     $quantidade = intval($material['quantidade']) ?? 1;
 
-    $stmt = $conn->prepare("INSERT INTO saidas_materiais (prontuario_leitor, nome_usuario, material_id, material_nome, quantidade) VALUES (?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO saidas_materiais (prontuario_leitor, material_id, material_nome, quantidade) VALUES (?, ?, ?, ?)");
     
     if (!$stmt) {
         $todosInscritos = false;
@@ -54,7 +52,7 @@ foreach ($materiais as $material) {
         continue;
     }
 
-    $stmt->bind_param("ssssi", $prontuario_leitor, $nome_usuario, $material_id, $material_nome, $quantidade);
+    $stmt->bind_param("sssi", $prontuario_leitor, $material_id, $material_nome, $quantidade);
 
     if (!$stmt->execute()) {
         $todosInscritos = false;

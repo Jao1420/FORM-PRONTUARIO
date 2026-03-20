@@ -50,9 +50,31 @@ if ($params) {
 $registros = [];
 
 if ($result) {
+    // Agrupar por prontuário_leitor
+    $agrupado = [];
+    
     while ($row = $result->fetch_assoc()) {
-        $registros[] = $row;
+        $prontuario = $row['prontuario_leitor'];
+        
+        if (!isset($agrupado[$prontuario])) {
+            $agrupado[$prontuario] = [
+                'prontuario_leitor' => $prontuario,
+                'ultima_retirada' => $row['data_hora'],
+                'total_retiradas' => 0,
+                'materiais' => []
+            ];
+        }
+        
+        $agrupado[$prontuario]['total_retiradas']++;
+        $agrupado[$prontuario]['materiais'][] = [
+            'material_nome' => $row['material_nome'],
+            'quantidade' => $row['quantidade'],
+            'data_hora' => $row['data_hora']
+        ];
     }
+    
+    // Converter para array indexado
+    $registros = array_values($agrupado);
 }
 
 echo json_encode(['sucesso' => true, 'registros' => $registros]);

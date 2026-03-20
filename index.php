@@ -1,95 +1,104 @@
-<?php require_once 'conexao/conexao.php'; 
-// require_once 'dados.php';
-?>
+<?php require_once 'conexao/conexao.php'; ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de prontuário</title>
-    <style>
-        body{
-            background-image: linear-gradient(to bottom, #f99a07, #f89405, #f78e04, #f58704, #f48105);;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .inputs{
-            width: 300px;
-            height: 30px;
-            font-size: 16px;
-            border-radius: 5px;
-        }
-        .form{
-            background-color: rgba(16, 45, 207, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            align-items: center;
-            display: flex;
-            flex-direction: column;
-        }
-        .textos{
-            color: white;
-            font-size: 18px;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        #cadastrar{
-            margin-top: 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
-    </style>
+    <title>Gerenciamento de Saída de Estoque</title>
+    <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-    <h1>Cadastro de prontuário</h1>
-    <form class="form" id="formProntuario" action="insert/inserirPront.php" method="POST">
-        <label class="textos" for="nomeInput">Nome do colaborador:</label><br>
-        <input class="inputs" type="text" id="nome" name="nome" required><br><br>
+    <div class="container">
+        <!-- CABEÇALHO -->
+        <div class="header">
+            <h1>Gerenciamento de Saída de Estoque</h1>
+            <p>Registre os materiais que estão sendo retirados do estoque</p>
+        </div>
 
-        <label class="textos" for="prontuarioInput">Prontuário da Visteon:</label><br>
-        <input class="inputs" type="text" id="prontuario" name="prontuario" required><br><br>
+        <!-- ALERTA -->
+        <div id="alert" class="alert"></div>
 
-        <label class="textos" for="prontuarioLeitorInput">Passe o prontuário no leitor :</label><br>
-        <input class="inputs" type="text" id="prontuarioLeitor" name="prontuarioLeitor" required><br><br>
+        <!-- FORMULÁRIO DE SAÍDA -->
+        <div class="form-section">
+            <form id="formSaida">
+                <div class="form-group">
+                    <label for="prontuarioLeitor">🔖 Passe o Prontuário no Leitor:</label>
+                    <input 
+                        type="text" 
+                        id="prontuarioLeitor" 
+                        name="prontuarioLeitor" 
+                        placeholder="Aproxime o prontuário do leitor..." 
+                        required 
+                        autofocus>
+                </div>
 
-        <input class="inputs" id="cadastrar" type="submit" value="Cadastrar">
-    </form>
+                <!-- SELEÇÃO DE MATERIAIS -->
+                <div class="materials-section">
+                    <h3>Selecione o(s) Material(is) Retirado(s):</h3>
+                    <div class="materials-grid" id="materialsContainer"></div>
+                </div>
+
+                <!-- BOTÕES -->
+                <div class="button-group">
+                    <button type="submit" class="btn-submit">✓ Registrar Saída</button>
+                    <button type="reset" class="btn-reset">Limpar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- TABELA DE REGISTROS -->
+        <div class="table-section">
+            <div class="table-header">
+                <h2>Histórico de Saídas</h2>
+                <div class="filter-group">
+                    <input 
+                        type="date" 
+                        id="dataInicio" 
+                        placeholder="Data início">
+                    <input 
+                        type="date" 
+                        id="dataFim" 
+                        placeholder="Data fim">
+                    <button id="filterBtnDatas" class="btn-export">Filtrar</button>
+                    <button id="exportBtn" class="btn-export">Exportar Excel</button>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prontuário</th>
+                        <th>Total de Retiradas</th>
+                        <th>Última Retirada</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="registrosTableBody">
+                    <tr>
+                        <td colspan="4" class="empty-state">Carregando registros...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALHES -->
+    <div id="modalDetalhes" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalhes de Retirada</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="modalInfo"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-reset close-modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
 </body>
-<script>
-    document.getElementById('formProntuario').addEventListener('submit', function(e) {
-        e.preventDefault(); // isso impede a mudança de página!
-
-        const formData = new FormData(this);
-
-        // Enviam PHP via AJAX (fetch)
-        fetch('insert/inserirPront.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.text()) // resposta do PHP
-        .then(data => {
-            if (data.trim() === "sucesso") {
-                alert('Prontuário cadastrado com sucesso!');
-                this.reset(); // Limpa os campos
-            } else {
-                alert('Erro: ' + data);
-            }
-        })
-        .catch(error => {
-            console.error('Erro:', error);
-            alert('Erro na conexão com o servidor.');
-        });
-    });
-</script>
-
 </html>
